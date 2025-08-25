@@ -18,7 +18,7 @@ export default function LineChart({
   marginTop = 30,
   marginRight = 30,
   marginBottom = 30,
-  marginLeft = 30
+  marginLeft =  100
 }) { 
     
     const gx = useRef();
@@ -26,8 +26,13 @@ export default function LineChart({
      const x = d3.scaleUtc(d3.extent(data, (d)=>d.date), [marginLeft, width - marginRight]).clamp(true);
      const y = d3.scaleLinear(d3.extent(data, (d)=>d.weight), [height - marginBottom, marginTop]);
      const line = d3.line().x((d)=>x(d.date)).y((d)=>y(d.weight));
+     const yAxis = d3.axisLeft(y).tickFormat((d)=>{
+      const oz = d % 16;
+      const lbs = Math.floor(d / 16);
+      return lbs +"lbs " + oz + "oz";
+    });
      useEffect(() => void d3.select(gx.current).call(d3.axisBottom(x)), [gx, x]);
-    useEffect(() => void d3.select(gy.current).call(d3.axisLeft(y)), [gy, y]);
+    useEffect(() => void d3.select(gy.current).call(yAxis), [gy, yAxis]);
   return (
     <svg width={width} height={height}>
       <g ref={gx} transform={`translate(0,${height - marginBottom})`} />
