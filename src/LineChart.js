@@ -1,68 +1,41 @@
-import React, { useRef, useEffect } from "react";
-import {
-  select,
-  line,
-  curveCardinal,
-  scaleLinear,
-  axisBottom,
-  axisLeft,
-} from "d3";
-//data
-const data = [
-  { x: 0, y: 10 },
-  { x: 1, y: 20 },
-  { x: 2, y: 15 },
-  { x: 3, y: 25 },
-  { x: 4, y: 100 },
+
+import * as d3 from "d3";
+import {useRef, useEffect} from "react";
+
+const testData = [
+    {date:new Date("2025-08-11"), weight: 83.5},
+    {date:new Date("2025-08-15"), weight: 84.5},
+    {date:new Date("2025-08-18"), weight: 87.1},
+    {date:new Date("2025-08-19"), weight: 86.4},
+    {date:new Date("2025-08-23"), weight: 85.7},
+    {date:new Date("2025-08-25"), weight: 84.3},
 ];
 
-//chart component
-const LineChart = () => {
-  //refs
-  const svgRef = useRef();
-
-  //draws chart
-  useEffect(() => {
-    const svg = select(svgRef.current);
-
-    //scales
-    const xScale = scaleLinear()
-      .domain([0, data.length - 1])
-      .range([0, 300]);
-
-    const yScale = scaleLinear().domain([0, 100]).range([100, 0]);
-
-    //axes
-    const xAxis = axisBottom(xScale).ticks(data.length);
-    svg.select(".x-axis").style("transform", "translateY(100px)").call(xAxis);
-
-    const yAxis = axisLeft(yScale);
-    svg.select(".y-axis").style("transform", "translateX(0px)").call(yAxis);
-
-    //line generator
-    const myLine = line()
-      .x((d, i) => xScale(i))
-      .y((d) => yScale(d.y));
-
-    //drawing the line
-    svg
-      .selectAll(".line")
-      .data([data])
-      .join("path")
-      .attr("class", "line")
-      .attr("d", myLine)
-      .attr("fill", "none")
-      .attr("stroke", "#00bfa6");
-  }, [data]);
-
+export default function LineChart({
+  data = testData,
+  width = 640,
+  height = 400,
+  marginTop = 30,
+  marginRight = 30,
+  marginBottom = 30,
+  marginLeft = 30
+}) { 
+    
+    const gx = useRef();
+    const gy = useRef();
+     const x = d3.scaleUtc(d3.extent(data, (d)=>d.date), [marginLeft, width - marginRight]).clamp(true);
+     const y = d3.scaleLinear(d3.extent(data, (d)=>d.weight), [height - marginBottom, marginTop]);
+     const line = d3.line().x((d)=>x(d.date)).y((d)=>y(d.weight));
+     useEffect(() => void d3.select(gx.current).call(d3.axisBottom(x)), [gx, x]);
+    useEffect(() => void d3.select(gy.current).call(d3.axisLeft(y)), [gy, y]);
   return (
-    
-      <svg ref={svgRef}>
-        
-        
-      </svg>
-    
+    <svg width={width} height={height}>
+      <g ref={gx} transform={`translate(0,${height - marginBottom})`} />
+      <g ref={gy} transform={`translate(${marginLeft},0)`} />
+      <path fill="none" stroke="steelblue" strokeWidth="1.5" d={line(data)} />
+      <g fill="white" stroke="currentColor" strokeWidth="1.5">
+        {data.map((d, i) => (<circle key={i} cx={x(d.date)} cy={y(d.weight)} r="2.5" />))}
+      </g>
+    </svg>
   );
-};
-
-export default LineChart;
+}
