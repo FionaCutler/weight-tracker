@@ -28,8 +28,8 @@ function tooltip(d){
    d3.select("#tooltip").text( d.date.toDateString() + ": " + d.lbs + "lbs " + d.oz + "oz" )
 }
 
-const width = 640;
-const height = 400;
+const width = 800;
+const height = 600;
 const marginTop = 30;
 const marginRight = 30;
 const marginBottom = 30;
