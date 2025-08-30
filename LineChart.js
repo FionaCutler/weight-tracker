@@ -25,11 +25,10 @@ const data = [
 ];
 
 function tooltip(d){
-   d3.select("#tooltip").text( d.date.toDateString() + ": " + d.lbs + "lbs " + d.oz + "oz" )
+   d3.select("#tooltip").text( d.date.toDateString() + ": " + d.weight + "lbs");
 }
-
 const width = 800;
-const height = 600;
+const height = 450;
 const marginTop = 30;
 const marginRight = 30;
 const marginBottom = 30;
@@ -39,33 +38,49 @@ data.forEach((d)=>{
   d.percent  = ((d.weight-mean)/mean)*100;     
 });
 const x = d3.scaleUtc(d3.extent(data, (d)=>d.date), [marginLeft, width - marginRight]).clamp(true);
-const y = d3.scaleLinear(d3.extent(data, (d)=>d.weight), [height - marginBottom, marginTop]);
-const line = d3.line().x((d)=>x(d.date)).y((d)=>y(d.weight));
+const y = d3.scaleLinear([0,d3.max(data,(d)=>d.weight)], [height - marginBottom, marginTop]);
+const line = (data, x) => d3.line().x((d)=>x(d.date)).y((d)=>y(d.weight))(data);
 const avgLine = d3.line().x((d)=>x(d.date)).y((d)=>y(mean));
+const xAxis = (g, x) => g
+      .call(d3.axisBottom(x).ticks(width / 80).tickSizeOuter(0))
 const yAxis = d3.axisLeft(y);
-//d3.select(gx.current).call(d3.axisBottom(x));
-//d3.select(gy.current).call(yAxis);
 const svg = d3.create("svg")
   .attr("width", width)
   .attr("height", height);
   
-svg.append("g")
+const gx = svg.append("g")
     .attr("transform", `translate(0,${height - marginBottom})`)
-    .call(d3.axisBottom(x));
+    .call(xAxis, x);
 
 svg.append("g")
     .attr("transform", `translate(${marginLeft},0)`)
     .call(d3.axisLeft(y));
 
-svg.append("path")
+const path = svg.append("path")
     .attr("fill", "none")
     .attr("stroke-width", 1.5)
     .attr("stroke-linejoin", "round")
     .attr("stroke-linecap", "round")
     .attr("stroke", "steelblue")
-    .attr("d", line(data));
-container.append(svg.node());
+    .attr("d", line(data,x));
 
-/*
-  <path fill="none" stroke="black" strokeWidth="1.5" d={avgLine(data)} />
-  */
+  const zoom = d3.zoom()
+      .scaleExtent([1, 32])
+      .extent([[marginLeft, 0], [width - marginRight, height]])
+      .translateExtent([[marginLeft, -Infinity], [width - marginRight, Infinity]])
+      .on("zoom", zoomed);
+
+
+function zoomed(event) {
+    const xz = event.transform.rescaleX(x);
+    path.attr("d", line(data, xz));
+    gx.call(xAxis, xz);
+}
+
+  // Initial zoom.
+  svg.call(zoom)
+    .transition()
+      .duration(750)
+      .call(zoom.scaleTo, 4, [x(Date.UTC(2001, 8, 1)), 0]);
+
+container.append(svg.node());
